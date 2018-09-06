@@ -72,6 +72,40 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+class Node(object):
+    """
+    A simple node class that represents a given node in a search tree, holding both the current state,
+    and the path taken to get to the current state.
+    """
+    def __init__(self, state, path = []):
+        self.state = state
+        self.path = path
+
+def simpleSearch(problem, queue):
+    """
+    This search function performs the generic search algorithm. 
+    The main customization point is in the queue and it's associated priority function.
+
+    This can be used by most of the later search algorithms simply by passing in a different queue.
+    """
+    start_state = problem.getStartState()
+
+    node = Node(start_state)
+    visited_nodes = set()
+
+    while not problem.isGoalState(node.state):
+        successors = problem.getSuccessors(node.state)
+
+        for state, direction, cost in successors:
+            if state not in visited_nodes:
+                n = Node(state, node.path + [direction])
+                queue.push(n)
+                visited_nodes.add(state)
+        
+        node = queue.pop()
+
+    return node.path
+
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
@@ -86,18 +120,23 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    """
+    This runs the simple search with a FIFO Stack
+    """
+    return simpleSearch(problem, util.Stack())
 
 def breadthFirstSearch(problem):
-    """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    """Search the shallowest nodes in the search tree first.
+    This runs the simple search with a LIFO Queue
+    """
+    return simpleSearch(problem, util.Queue())
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    queuingFunction = lambda node: problem.getCostOfActions(node.path)
+    queue = util.PriorityQueueWithFunction(queuingFunction)
+    return simpleSearch(problem, queue)
 
 def nullHeuristic(state, problem=None):
     """
@@ -108,9 +147,9 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    queuingFunction = lambda node: problem.getCostOfActions(node.path) + heuristic(node.state, problem)
+    queue = util.PriorityQueueWithFunction(queuingFunction)
+    return simpleSearch(problem, queue)
 
 # Abbreviations
 bfs = breadthFirstSearch
