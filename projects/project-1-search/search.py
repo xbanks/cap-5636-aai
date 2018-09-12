@@ -91,7 +91,7 @@ def simpleSearch(problem, queuingFunction):
     start_state = problem.getStartState()
 
     node = Node(start_state)
-    visited_nodes = set(start_state)
+    visited_nodes = set([start_state])
 
     queue = util.PriorityQueueWithFunction(queuingFunction)
     while not problem.isGoalState(node.state):
