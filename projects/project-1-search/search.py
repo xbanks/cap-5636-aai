@@ -81,7 +81,7 @@ class Node(object):
         self.state = state
         self.path = path
 
-def simpleSearch(problem, queue):
+def simpleSearch(problem, queuingFunction):
     """
     This search function performs the generic search algorithm. 
     The main customization point is in the queue and it's associated priority function.
@@ -91,18 +91,22 @@ def simpleSearch(problem, queue):
     start_state = problem.getStartState()
 
     node = Node(start_state)
-    visited_nodes = set()
+    visited_nodes = set(start_state)
 
+    queue = util.PriorityQueueWithFunction(queuingFunction)
     while not problem.isGoalState(node.state):
         successors = problem.getSuccessors(node.state)
 
         for state, direction, cost in successors:
             if state not in visited_nodes:
-                n = Node(state, node.path + [direction])
+                newpath = node.path + [direction]
+                n = Node(state, newpath)
                 queue.push(n)
-                visited_nodes.add(state)
-        
+
         node = queue.pop()
+        while node.state in visited_nodes:
+            node = queue.pop()
+        visited_nodes.add(node.state)
 
     return node.path
 
@@ -124,19 +128,20 @@ def depthFirstSearch(problem):
     """
     This runs the simple search with a FIFO Stack
     """
-    return simpleSearch(problem, util.Stack())
+    queuingFunction = lambda node: - len(node.path)
+    return simpleSearch(problem, queuingFunction)
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first.
     This runs the simple search with a LIFO Queue
     """
-    return simpleSearch(problem, util.Queue())
+    queuingFunction = lambda node: len(node.path)
+    return simpleSearch(problem, queuingFunction)
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     queuingFunction = lambda node: problem.getCostOfActions(node.path)
-    queue = util.PriorityQueueWithFunction(queuingFunction)
-    return simpleSearch(problem, queue)
+    return simpleSearch(problem, queuingFunction)
 
 def nullHeuristic(state, problem=None):
     """
@@ -148,8 +153,7 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     queuingFunction = lambda node: problem.getCostOfActions(node.path) + heuristic(node.state, problem)
-    queue = util.PriorityQueueWithFunction(queuingFunction)
-    return simpleSearch(problem, queue)
+    return simpleSearch(problem, queuingFunction)
 
 # Abbreviations
 bfs = breadthFirstSearch
