@@ -526,8 +526,10 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def closestHeuristic(position, problem):
+            food_distances = sorted(map(lambda x: util.manhattanDistance(x, position), food.asList()))
+            return food_distances[-1]
+        return search.astar(problem, closestHeuristic)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -562,8 +564,9 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         """
         x,y = state
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        food_list = self.food.asList()
+        closest_dot = sorted(food_list, key=lambda pt: util.manhattanDistance(pt, state))[0]
+        return state == closest_dot
 
 def mazeDistance(point1, point2, gameState):
     """
