@@ -74,30 +74,47 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
+        from random import random
+
+        pos = currentGameState.getPacmanPosition()
+        food = currentGameState.getFood()
+        ghostStates = currentGameState.getGhostStates()
+        scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
 
         distance = lambda x: util.manhattanDistance(x, newPos)
         ghostPositions = map(lambda x: x.getPosition(), newGhostStates)
-        distance_to_ghosts = map(distance, ghostPositions)
-        distance_to_food = map(distance, newFood.asList())
-        ded = any(map(lambda x: x == newPos, ghostPositions))
-        if ded:
-            ded_score = -1000
-        else:
-            ded_score = 0
+        distance_to_ghosts = sum(map(distance, ghostPositions))
 
-        if action == Directions.STOP:
-            stop_penalty = -10
-        else:
-            stop_penalty = 0
-        score = successorGameState.getScore() - \
-                len(newFood.asList()) ** 2 + \
-                sum(newScaredTimes) + \
-                sum(distance_to_ghosts) - \
-                sum(distance_to_food) + \
-                successorGameState.getScore() + \
-                ded_score
+        def food_distance(foodList):
+            distance_to_closest_food = float('inf')
+            for pellet in foodList:
+                distance_to_closest_food = min(distance_to_closest_food, distance(pellet))
+            return distance_to_closest_food
 
-        return score
+        distance_to_food = food_distance(food.asList())
+        distance_to_new_food = food_distance(newFood.asList())
+
+        better_score = successorGameState.getScore() > currentGameState.getScore()
+        lost = successorGameState.isLose()
+        won = successorGameState.isWin()
+        less_food = len(newFood.asList()) < len(food.asList())
+        closer_to_food = distance_to_new_food < distance_to_food
+        ghosts_too_close = distance_to_ghosts < 4
+
+        value = (better_score * 5) \
+                - (lost * 100) \
+                + (won * 100) \
+                + (less_food * 5) \
+                + (closer_to_food) \
+                + random() \
+                + (1.0 / (distance_to_food + 0.00000001))
+
+        if ghosts_too_close:
+            non_zero_distance = distance_to_ghosts + 0.000001
+            ghost_penalty = (1.0 / non_zero_distance) * 100
+            value -= ghost_penalty
+
+        return value
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -339,16 +356,15 @@ def betterEvaluationFunction(currentGameState):
     lose = currentGameState.data._lose
 
     dist_func = lambda x: util.manhattanDistance(pacman.configuration.pos, x)
-    distance_to_ghosts = sum(map(dist_func, capsules))
-
+    distance_to_ghosts = sum(map(dist_func, ghost_positions))
 
     value = score \
             + win * 100 \
             + lose * -1000 \
-            + distance_to_ghosts \
             + (1.0 / (len(food) + 1)) * 10 \
             + (1.0 / (len(capsules) + 1)) \
             + random() / 10.0
+            # + distance_to_ghosts \
 
     distance_to_closest_food = float('inf')
     for pellet in food:
@@ -357,12 +373,22 @@ def betterEvaluationFunction(currentGameState):
     if distance_to_closest_food < float('inf'):
         value += 10.0 / distance_to_closest_food
 
-    distance_to_closest_cap = float('inf')
-    for pellet in capsules:
-        distance_to_closest_cap = min(distance_to_closest_cap, dist_func(pellet))
+    def min_dist(lst):
+        closest_dist = float('inf')
+        for point in lst:
+            closest_dist = min(closest_dist, dist_func(point))
+        return closest_dist
 
+    distance_to_closest_cap = min_dist(capsules)
     if distance_to_closest_cap < float('inf'):
-            value += 1.0 / distance_to_closest_cap
+        value += 1.0 / distance_to_closest_cap
+
+    distance_to_ghosts = min_dist(ghost_positions)
+    ghosts_too_close = distance_to_ghosts < 4
+    if ghosts_too_close:
+        non_zero_distance = distance_to_ghosts + 0.000001
+        ghost_penalty = (1.0 / non_zero_distance) * 100
+        value -= ghost_penalty
 
     return value
 
