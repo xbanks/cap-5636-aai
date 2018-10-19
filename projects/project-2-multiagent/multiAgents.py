@@ -314,7 +314,57 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    from pprint import pprint
+    from operator import attrgetter
+    from random import random
+
+    # pprint(currentGameState.data.__dict__)
+    # pprint(currentGameState.data.agentStates[0].__dict__)
+    # pprint(currentGameState.data.agentStates[1].__dict__)
+    # pprint(currentGameState.data.agentStates[1].configuration.__dict__)
+    pacman = currentGameState.data.agentStates[0]
+    ghosts = currentGameState.data.agentStates[1:]
+    ghost_scared_timers = map(attrgetter('scaredTimer'), ghosts)
+    ghost_positions = map(attrgetter('configuration.pos'), ghosts)
+
+    gs = zip(ghost_scared_timers, ghost_positions)
+
+    moved = currentGameState.data._agentMoved
+    food = currentGameState.data.food.asList()
+    capsules = currentGameState.data.capsules
+    score = currentGameState.data.score
+    scoreChange = currentGameState.data.scoreChange
+    win = currentGameState.data._win
+    lose = currentGameState.data._lose
+
+    dist_func = lambda x: util.manhattanDistance(pacman.configuration.pos, x)
+    distance_to_ghosts = sum(map(dist_func, capsules))
+
+
+    value = score \
+            + win * 100 \
+            + lose * -1000 \
+            + distance_to_ghosts \
+            + (1.0 / (len(food) + 1)) * 10 \
+            + (1.0 / (len(capsules) + 1)) \
+            + random() / 10.0
+
+    distance_to_closest_food = float('inf')
+    for pellet in food:
+        distance_to_closest_food = min(distance_to_closest_food, dist_func(pellet))
+
+    if distance_to_closest_food < float('inf'):
+        value += 10.0 / distance_to_closest_food
+
+    distance_to_closest_cap = float('inf')
+    for pellet in capsules:
+        distance_to_closest_cap = min(distance_to_closest_cap, dist_func(pellet))
+
+    if distance_to_closest_cap < float('inf'):
+            value += 1.0 / distance_to_closest_cap
+
+    return value
 
 # Abbreviation
 better = betterEvaluationFunction
